@@ -9,4 +9,4 @@ It is an environmental data monitor, based on a Wemos D1, powered by a photovolt
 
 The sensors are placed in a separate container, equipped with a transparent cover (for the brightness sensor) and a pair of push-pull fans which wash the internal air before reading.
 
-All collected data is sent via WiFi to an MQTT broker in order to be used in a flexible and decoupled way.
+All collected data are sent via WiFi to an MQTT broker (PubSubClient library) in order to be used in a flexible and decoupled way.
