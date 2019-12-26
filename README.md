@@ -2,7 +2,7 @@
 An environmental monitor based on Wemos D1
 
 It is an environmental data monitor, based on a Wemos D1, powered by a photovoltaic panel via a backup battery, installed on the terrace, which provides the following data:
-1) Brightness (TSL2561)
+1) Brightness (TSL2561 - luxmeter)
 2) Temperature (DS18B20)
 3) Temperature, pressure, humidity (BME280)
 4) Battery voltage
