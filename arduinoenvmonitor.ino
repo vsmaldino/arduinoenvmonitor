@@ -17,6 +17,7 @@
 
 #include <ESP8266WiFi.h>
 #include <WiFiClient.h>
+#include <ESP8266httpUpdate.h>
 #include <PubSubClient.h>
 
 #include "securities.h"
@@ -29,11 +30,19 @@
 #define mqttPort myport
 #define mqttUser "myusername"
 #define mqttPassword "mypassword"
+#define otahost "myotahost"
+#define otaport myotaport
+#define otapath "myotapath"
 */
 
 #define maxRetr 20
 #define mqttClientId "smaldinoHomeTerrace"
 #define mqttTopic "announcement/clientid"
+/*
+ * ******************************************************
+ * cambiare wemosd1 aggiungendo il chipid ESP.getChipId *
+ * ******************************************************
+*/
 #define mqttTopicOut    "it/smaldino/home/terrace/wemosd1/out"
 #define mqttTopicCmds   "it/smaldino/home/terrace/wemosd1/cmds"
 // ######## comandi ################
