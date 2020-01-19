@@ -1,7 +1,11 @@
+#define fw_vers "envm00_0.1.0.4a"
+// Firmware id  : envm00
+// Firmware vers: 0.1.0.4a a=autoupdate
+
 // Attenzione che i pin SCL e SDA cambiano a seconda della scheda utilizzata Arduino UNO/Wemos D1R1/Wemos D1R2
 //
 // Attenzione BME280 e TSL2561 alimentati a 3.3V
-// Attenzione Wemos D1 ha max V su A0 pari a 3.3 / 10bit
+// Attenzione Wemos D1 ha max V su A0 pari a 3.3V / 10bit
 //
 /*
  * I sensori non possono essere tenuti spenti per evitare fenomeni 
@@ -35,6 +39,8 @@
 #define otapath "myotapath"
 */
 
+#define tick 10 // in ms
+
 #define maxRetr 20
 #define mqttClientId "smaldinoHomeTerrace"
 #define mqttTopic "announcement/clientid"
@@ -43,8 +49,11 @@
  * cambiare wemosd1 aggiungendo il chipid ESP.getChipId *
  * ******************************************************
 */
-#define mqttTopicOut    "it/smaldino/home/terrace/wemosd1/out"
-#define mqttTopicCmds   "it/smaldino/home/terrace/wemosd1/cmds"
+#define mqttTopicOut      "it/smaldino/home/terrace/wemosd1/out"
+#define mqttTopicCmds     "it/smaldino/home/terrace/wemosd1/cmds"
+#define mqttTopicSensor   "/sens"
+#define mqttTopicTecInfo  "/tecinfo"
+
 // ######## comandi ################
 #define FORCEREAD "READNOW"
 // #################################
@@ -61,31 +70,34 @@
 // ######## tsl   ################
   /* Changing the integration time gives you better sensor resolution (402ms = 16-bit data) */
 // #define TSL2561_INTEGRATIONTIME TSL2561_INTEGRATIONTIME_13MS      /* fast but low resolution */
-// #define TSL2561_INTEGRATIONTIME TSL2561_INTEGRATIONTIME_101MS  /* medium resolution and speed   */
-#define TSL2561_INTEGRATIONTIME TSL2561_INTEGRATIONTIME_402MS  /* 16-bit data but slowest conversions */
+#define TSL2561_INTEGRATIONTIME TSL2561_INTEGRATIONTIME_101MS  /* medium resolution and speed   */
+// #define TSL2561_INTEGRATIONTIME TSL2561_INTEGRATIONTIME_402MS  /* 16-bit data but slowest conversions */
 // ###############################
 
 #define checkMqttClient 80 // in ms intervallo per il controllo dell'arrivo di messaggi
-#define leaseDuration 5 // lesase del DHCP in hour 
+#define leaseDuration 5 // lease del DHCP in hour 
 
-#define readingSensorsInterval 5 // in minuti, ogni quanti minuti legge i sensori
-#define washTime 60              // in sec, tempo di lavaggio dell'aria interna
-#define washTimePreOff 5         // in sec, tempo di pre-spegnimento delle ventole
+#define readingSensorsInterval 10 // in minuti, ogni quanti minuti legge i sensori
+#define washTime 90               // in sec, tempo di lavaggio dell'aria interna
+#define washTimePreOff 5          // in sec, tempo di pre-spegnimento delle ventole
 
-#define ledSigPin LED_BUILTIN
-#define myOFF HIGH // LED_BUILTIN funziona al contrario
-#define myON  LOW  // LED_BUILTIN funziona al contrario
+#define ledSigPin D7 
+#define myOFF LOW    
+#define myON  HIGH   
 
 #define batAnalogPin A0
-#define batReadings 50 // numero ripetizioni della lettura fra cui fare la media
-#define readDelay 10   // in ms, attesa fra una lettura e l'altra
-#define fanPin D13
+#define batReadings 5  // numero ripetizioni della lettura fra cui fare la media
+#define readDelay 10   // in ms, attesa fra una lettura e l'altra di A0
 #define ONE_WIRE_BUS D8
+#define fanPin D5
+// #define pwmLevels 1024   // ESP8266 boards
+// #define fanHighLevel 870 // 85% of about 13.2V
+#define myFanOff LOW
+#define myFanOn  HIGH
 
 #define NumberOfErrorSignal 5
 #define delay1 300
 #define delay2 1000
-#define delay3 10
 
 #define SEALEVELPRESSURE_HPA (1013.25)
 
@@ -101,13 +113,6 @@
    provide an appropriate value in the constructor below (12345
    is used by default in this example).
    
-   Connections
-   ===========
-   Connect SCL to analog 5
-   Connect SDA to analog 4
-   Connect VDD to 3.3V DC
-   Connect GROUND to common ground
-
    I2C Address
    ===========
    The address will be different depending on whether you leave
@@ -126,8 +131,8 @@ DallasTemperature sensors(&oneWire);
 
 int status; // stato del sistema
 
-#define heartBeatTime 6 // in sec, ogni quanto accende la luce di heartbeat
-                        // l'accensione dura circa 1/5 della pausa
+#define heartBeatTime 7 // in sec, ogni quanto accende la luce di heartbeat
+                        // l'accensione dura circa 1/6 della pausa
 boolean heartBeatStatus=false;
 unsigned long loopHeartBeat; // cicli per il battito del cuore
 unsigned long loopCount4HeartBeat=0;
@@ -141,10 +146,42 @@ unsigned long loop4client; // ogni quanti cicli controlla l'arrivo di messaggi
 unsigned long loopCount4client=0; // contatore per il controllo dell'arrivo dei messaggi
                            // usato anche per la segnazione in condizione di errore
 boolean forceReadSensors=false;
-boolean readingMessageSent=false;
+boolean readingProcActivated=false;
 
 WiFiClient espClient;
 PubSubClient client(espClient);
+
+
+void checkOTAupdates() {
+  String otaurl;
+  
+  otaurl = String(otaprotocol);
+  otaurl = String(otaurl + "://");
+  otaurl = String(otaurl + otahost);
+  otaurl = String(otaurl + ":");
+  otaurl = String(otaurl + otaport);
+  otaurl = String(otaurl + otapath);
+  Serial.print("Check fo update OTA URL: ");
+  Serial.println(otaurl);
+  ESPhttpUpdate.rebootOnUpdate(false);
+  t_httpUpdate_return ret = ESPhttpUpdate.update(espClient, otaurl, fw_vers); 
+  /*upload information only */
+  switch (ret) {
+    case HTTP_UPDATE_FAILED:
+      Serial.printf("HTTP_UPDATE_FAILED Error (%d): %s", ESPhttpUpdate.getLastError(), ESPhttpUpdate.getLastErrorString().c_str());
+      break;
+    case HTTP_UPDATE_NO_UPDATES:
+      Serial.println("HTTP_UPDATE_NO_UPDATES");
+      break;
+    case HTTP_UPDATE_OK:
+      // actually this branch is never activated because the board restarts immediately after update
+      Serial.println("HTTP_UPDATE_OK");
+      Serial.println("Restarting ....");
+      delay(5000);
+      ESP.restart();
+      break;
+  }
+} // checkOTAupdates
 
 
 int myconnect() {
@@ -174,6 +211,9 @@ int myconnect() {
    
    Serial.println("Waiting few seconds for network to be up ...");
    delay(delay2*3);
+   checkOTAupdates();
+   // if update found, checkOTAupdates restarts the board
+   
    client.setCallback(callback);
    client.setServer(mqttServer, mqttPort);
    Serial.print("Connecting to MQTT server ");
@@ -217,32 +257,37 @@ void setup() {
    pinMode(ledSigPin, OUTPUT);
    digitalWrite(ledSigPin, myON);
 
+   // spegne il LED_BUILTIN
+   pinMode(LED_BUILTIN, OUTPUT);
+   digitalWrite(LED_BUILTIN, HIGH);
+
    pinMode(fanPin, OUTPUT);
-   digitalWrite(fanPin, LOW);
+   digitalWrite(fanPin, myFanOff);
+   // analogWrite(fanPin, 0);
    
    Serial.begin(19200);
    
    status=statusErrGen;
    
    loopCount4LeaseDuration=0;
-   loopLeaseDuration=leaseDuration*3600*1000/delay3;
+   loopLeaseDuration=leaseDuration*3600*1000/tick;
    
    loopCount4client=0;
-   loop4client=checkMqttClient/delay3;
+   loop4client=checkMqttClient/tick;
    
    loopCount4ReadingSensors=0;
-   loopReadingSensors=readingSensorsInterval*60*990 /delay3; // 1% di compensazione tempo
+   loopReadingSensors=readingSensorsInterval*60*990 /tick; // 1% di compensazione tempo
 
-   loopHeartBeat=(heartBeatTime * 1000) /delay3;
+   loopHeartBeat=(heartBeatTime * 1000) /tick;
    loopCount4HeartBeat=0;
    heartBeatStatus=false;
 
-   loopWash=(washTime - washTimePreOff) * 1000 / delay3;
-   loopWashPreOff=washTimePreOff * 1000 / delay3;
+   loopWash=(washTime - washTimePreOff) * 1000 / tick;
+   loopWashPreOff=washTimePreOff * 1000 / tick;
    
    forceReadSensors=false;
    
-   readingMessageSent=false;
+   readingProcActivated=false;
     
    status=myconnect();
 
@@ -311,7 +356,7 @@ float readBat(int batPin) {
   // dalla qualità dei cablaggi, dalla qualità del mio tester e dalla qualità del 
   // convertitore A/D del wemos
   // la contemporanea presenza del collegamento USB sembra influenzare negativamente la lettura
-  volt=rawVolt*2.9/1024.0; // non modificare, serve per tarare la lettura su 3.3V max e 10bit
+  volt=rawVolt*3.09/1024.0; // non modificare, serve per tarare la lettura su 3.3V max e 10bit
   voltBat=volt*(20.6+81.5)/20.6;
   // Serial.print("Tensione: ");
   // Serial.println(volt);
@@ -344,7 +389,7 @@ void loop () {
       }
       
       loopCount4HeartBeat++;
-      if (((loopCount4HeartBeat>(loopHeartBeat/5)) && (heartBeatStatus)) ||
+      if (((loopCount4HeartBeat>(loopHeartBeat/6)) && (heartBeatStatus)) ||
           ((loopCount4HeartBeat>loopHeartBeat) && (!heartBeatStatus)))
       {
         loopCount4HeartBeat=0;
@@ -371,7 +416,7 @@ void loop () {
         ESP.restart();
       }
       
-      delay(delay3);
+      delay(tick);
    }
    else {
       // condizione di errore
@@ -395,8 +440,6 @@ void readSensors() {
   float floatDataVal;
   int  intDataVal;
   
-  // mqttTopicOut
-  
   /* Get a new TSL sensor event */ 
   sensors_event_t event;
   tsl.getEvent(&event);
@@ -404,7 +447,7 @@ void readSensors() {
   /* Display the results (light is measured in lux) */
   intDataVal=event.light;
   if (intDataVal) {
-    Serial.print("Lux              = ");
+    Serial.print("Lux               = ");
     Serial.println(intDataVal); 
   }
   else {
@@ -413,6 +456,7 @@ void readSensors() {
     Serial.println("Sensor overload");
   }
   strcpy(topic, mqttTopicOut);
+  strcat(topic, mqttTopicSensor);
   strcat(topic,"/light");
   sprintf(message,"%5d",intDataVal);
   // Serial.println(topic);
@@ -425,41 +469,46 @@ void readSensors() {
   Serial.print(floatDataVal);
   Serial.println("*C");
   strcpy(topic, mqttTopicOut);
+  strcat(topic, mqttTopicSensor);
   strcat(topic,"/tempbme");
   sprintf(message,"%3.1f",floatDataVal);
   client.publish(topic,message);
 
   floatDataVal=bme.readHumidity();
-  Serial.print("Humidity         = ");
+  Serial.print("Humidity          = ");
   Serial.print(floatDataVal);
   Serial.println("%");
   strcpy(topic, mqttTopicOut);
+  strcat(topic, mqttTopicSensor);
   strcat(topic,"/humbme");
-  sprintf(message,"%3.1f",floatDataVal);
+  sprintf(message,"%4.1f",floatDataVal);
   client.publish(topic,message);
 
-  floatDataVal=bme.readPressure();
-  Serial.print("Pressure         = ");
-  Serial.print(floatDataVal / 100.0F);
+  floatDataVal=bme.readPressure()/100.0F;
+  Serial.print("Pressure          = ");
+  Serial.print(floatDataVal);
   Serial.println("hPa");
   strcpy(topic, mqttTopicOut);
+  strcat(topic, mqttTopicSensor);
   strcat(topic,"/pressbme");
-  sprintf(message,"%3.1f",floatDataVal);
+  sprintf(message,"%5.1f",floatDataVal);
   client.publish(topic,message);
 
-  Serial.print("Approx. Altitude = ");
+  Serial.print("Approx. Altitude  = ");
   floatDataVal=bme.readAltitude(SEALEVELPRESSURE_HPA);
   Serial.print(floatDataVal);
   Serial.println("m");
   strcpy(topic, mqttTopicOut);
-  strcat(topic,"/altitude");
+  strcat(topic, mqttTopicSensor);
+  strcat(topic,"/altitbme");
   sprintf(message,"%4.0f",floatDataVal);
   client.publish(topic,message);
 
   floatDataVal=readBat(batAnalogPin);
-  Serial.print("Battery          = ");
+  Serial.print("Battery           = ");
   Serial.println(floatDataVal);
   strcpy(topic, mqttTopicOut);
+  strcat(topic, mqttTopicSensor);
   strcat(topic,"/bat");
   sprintf(message,"%3.1f",floatDataVal);
   client.publish(topic,message);
@@ -467,10 +516,11 @@ void readSensors() {
   // Send the command to get temperatures
   sensors.requestTemperatures();
   floatDataVal=sensors.getTempCByIndex(0);
-  Serial.print("Temper. (dallas) = ");
+  Serial.print("Temper. (dallas)  = ");
   Serial.print(floatDataVal);
   Serial.println("*C");
   strcpy(topic, mqttTopicOut);
+  strcat(topic, mqttTopicSensor);
   strcat(topic,"/tempdallas");
   sprintf(message,"%3.1f",floatDataVal);
   client.publish(topic,message);
@@ -575,26 +625,27 @@ void configureLightSensor() {
 } // configureLightSensor
 
 void manageSensorReading() {
-  // DA RIVEDERE HO IL SOSPETTO CHE IN ACCENSIONE VENTOLE CI ENTRI MOLTE VOLTE
   char topic[200];
   loopCount4ReadingSensors++;
   if (loopCount4ReadingSensors > (loopReadingSensors - loopWash - loopWashPreOff)) {
     if (loopCount4ReadingSensors < (loopReadingSensors - loopWashPreOff)) {
-      // accensione ventole
-      // Serial.println("Accensione ventole");
-      digitalWrite(fanPin, HIGH);
-      // avvisa che è partita la sequenza di lettura
-      if (!readingMessageSent) {
+      if (!readingProcActivated) {
+         // accensione ventole
+         // Serial.println("Accensione ventole");
+         digitalWrite(fanPin, myFanOn);
+         // analogWrite(fanPin, fanHighLevel);
+         // avvisa che è partita la sequenza di lettura
          strcpy(topic, mqttTopicOut);
          strcat(topic,"/reading");
          client.publish(topic,"READINGON");
-         readingMessageSent=true;
+         readingProcActivated=true;
       }
     }
     else {
       // spegnimento ventole
       // Serial.println("Spegnimento ventole");
-      digitalWrite(fanPin, LOW);
+      digitalWrite(fanPin, myFanOff);
+      // analogWrite(fanPin, 0);
       if (loopCount4ReadingSensors > loopReadingSensors) {
         loopCount4ReadingSensors=0;
         // esegue la lettura dei sensori
@@ -603,7 +654,7 @@ void manageSensorReading() {
         strcpy(topic, mqttTopicOut);
         strcat(topic,"/reading");
         client.publish(topic,"READINGOFF");
-        readingMessageSent=false;
+        readingProcActivated=false;
       }
     }
   }
