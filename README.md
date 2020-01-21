@@ -73,7 +73,7 @@ It registers itself to the MQTT broker as *mqttClientId*
 
 There are a lot of Off-the-shelf MQTT clients available for Android and iOS. They can visualize subscribed topics and send messages to published topics.
 
-I'm using this https://play.google.com/store/apps/details?id=snr.lab.iotmqttpanel.prod&hl=en
+I'm using this client https://play.google.com/store/apps/details?id=snr.lab.iotmqttpanel.prod&hl=en
 
 ![](imgs/Screenshot.png)
 
@@ -81,9 +81,11 @@ I'm using this https://play.google.com/store/apps/details?id=snr.lab.iotmqttpane
 
 ![](imgs/electric_schema.png)
 
-## References
+## OTA Update
+ESP8266-based boards can receive firmware via OTA (Over-The-Air). This function is very useful when the board is not easily accessible and when the updates need to be installed on multiple devices. The fuction needs to be implemented in the software and it must be uploaded to the board via USB only the first time, all the subsequent updates can be uploaded via OTA. Obviously the board requires a working wifi connection.
+OTA updates are based on this my other project https://github.com/vsmaldino/ESP8266phpOTA.
 
-[https://tttapa.github.io/ESP8266/Chap07%20-%20Wi-Fi%20Connections.html](https://tttapa.github.io/ESP8266/Chap07 - Wi-Fi Connections.html)
+## References
 
 https://www.electronicshub.org/arduino-multitasking-tutorial/
 
@@ -96,6 +98,10 @@ https://learn.adafruit.com/tsl2561
 https://www.hivemq.com/blog/mqtt-essentials-wrap-up/
 
 https://www.hivemq.com/blog/mqtt-client-library-encyclopedia-arduino-pubsubclient/
+
+http://arduino.esp8266.com/Arduino/versions/2.0.0/doc/ota_updates/ota_updates.html#introduction
+
+https://tttapa.github.io/ESP8266/Chap07%20-%20Wi-Fi%20Connections.html
 
 
 
