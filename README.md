@@ -33,28 +33,28 @@ Nothing special.
 
 ### Multitask
 
-The code is written in order to perform repeated actions at specific time intervals and simultaneously react to commands from the network (via MQTT broker). All coded without the use of interrupts
+The code is written in order to perform repeated actions at specific time intervals and simultaneously react to commands from the network (via MQTT broker). The software doesn't use interrupts.
 
 ### Digital environment sensors
 
-Two types of digital sensors have been used: Dallas DS18b20 and Bosch BME280. Both suffer of small self-heating problem. To improve their accuracy, the sensors are mounted into a separate box, equipped with 2 fans in push-pull configuration which are activated for about 60-80 seconds before reading. The goal is to avoid accumulations of heat and/or humidity.
+Two types of digital sensors have been used: Dallas DS18b20 and Bosch BME280. Both suffer of small self-heating problem. To improve their accuracy, the sensors are mounted into a separate box equipped with 2 fans in push-pull configuration which are activated for about 60-80 seconds before reading. The goal is to avoid accumulations of heat and/or humidity.
 
 The Dallas sensor is a cheap temperature sensor available in TO92 package or Waterproof envelope; it has good performance, stability and precision. It communicates with the board using the 1-Wire protocol.
 
-The Bosch BME280 is a multi sensor: temperature, humidity and atmospheric pression. Its best use is to control temperature, humidity and dew points in rooms; the three values are calculate and supplied in a coherent way, but they are not necessarily exact.  It communicates with the board using the I2C or SPI protocol.
+The Bosch BME280 is a multi sensor: temperature, humidity and atmospheric pression. Its best use is to control temperature, humidity and dew points in rooms; the three values are calculate and supplied in a coherent way, but they are not actually exact.  It communicates with the board using the I2C/SPI protocol.
 
 ### Digital luminosity sensor
 
-TSL 2561 is a good and configurable digital light sensor; it supplies luminosity level already in lux units. It has some problem when hit by a direct sunlight. It communicates with the board using I2C protocol.
+TSL 2561 is a good and configurable digital light sensor; it supplies luminosity level in lux units. It has some problem when hit by a direct sunlight and communicates with the board using I2C/SPI protocol.
 ## MQTT protocol and MQTT Arduino library
 
-MQTT is a very simple and reliable protocol, largely used for IoT devices communications. In this project it is used for "subscribe" and "publish". 
+MQTT is a very simple and reliable protocol, largely used for IoT devices communications. In this project it is used for "subscribe" and "publish" at the same time.
 
 ## MQTT Topics
 
 It registers itself to the MQTT broker as *mqttClientId*
 
-##### Publish topics 
+##### Published topics 
 
 - *outsensorprefix*/light (luminosity level from TSL2561, in lux)
 - *outsensorprefix*/tempbme (temperature from BOSCH BME280, in °C)
@@ -65,7 +65,7 @@ It registers itself to the MQTT broker as *mqttClientId*
 - *outsensorprefix*/reading (READINGON when starts reading sequence)
 - announcement/clientid (for *mqttClientId*)
 
-##### Subscribe topics 
+##### Subscribed topics 
 
 - *mqttTopicCmds* (for receiving commands, like READNOW to start reading sequence)
 
@@ -73,7 +73,7 @@ It registers itself to the MQTT broker as *mqttClientId*
 
 There are a lot of Off-the-shelf MQTT clients available for Android and iOS. They can visualize subscribed topics and send messages to published topics.
 
-I'm using this https://play.google.com/store/apps/details?id=snr.lab.iotmqttpanel.prod&hl=en
+I'm using this client https://play.google.com/store/apps/details?id=snr.lab.iotmqttpanel.prod&hl=en
 
 ![](imgs/Screenshot.png)
 
@@ -81,9 +81,11 @@ I'm using this https://play.google.com/store/apps/details?id=snr.lab.iotmqttpane
 
 ![](imgs/electric_schema.png)
 
-## References
+## OTA Update
+ESP8266-based boards can receive firmware via OTA (Over-The-Air). This function is very useful when the board is not easily accessible and when the updates need to be installed on multiple devices. The fuction needs to be implemented in the software and it must be uploaded to the board via USB only the first time, all the subsequent updates can be uploaded via OTA. Obviously the board requires a working wifi connection.
+OTA updates are based on this my other project https://github.com/vsmaldino/ESP8266phpOTA.
 
-[https://tttapa.github.io/ESP8266/Chap07%20-%20Wi-Fi%20Connections.html](https://tttapa.github.io/ESP8266/Chap07 - Wi-Fi Connections.html)
+## References
 
 https://www.electronicshub.org/arduino-multitasking-tutorial/
 
@@ -96,6 +98,10 @@ https://learn.adafruit.com/tsl2561
 https://www.hivemq.com/blog/mqtt-essentials-wrap-up/
 
 https://www.hivemq.com/blog/mqtt-client-library-encyclopedia-arduino-pubsubclient/
+
+http://arduino.esp8266.com/Arduino/versions/2.0.0/doc/ota_updates/ota_updates.html#introduction
+
+https://tttapa.github.io/ESP8266/Chap07%20-%20Wi-Fi%20Connections.html
 
 
 
