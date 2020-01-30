@@ -1,6 +1,6 @@
-#define fw_vers "envm00_0.1.0.4a"
+#define fw_vers "envm00_0.1.0.5a"
 // Firmware id  : envm00
-// Firmware vers: 0.1.0.4a a=autoupdate
+// Firmware vers: 0.1.0.5a a=autoupdate
 
 // Attenzione che i pin SCL e SDA cambiano a seconda della scheda utilizzata Arduino UNO/Wemos D1R1/Wemos D1R2
 //
@@ -299,11 +299,16 @@ void setup() {
 
 
 void analyzePayload(char *payload) {
+  char topic[200];
   // client.publish(mqttTopic,"Light on");
   if (strstr(payload, FORCEREAD)) {
      // arrivata la richiesta di fare una lettura
      forceReadSensors=true;
      Serial.println("Richiesta di lettura");
+     // avvisa che è partita la sequenza di lettura
+     strcpy(topic, mqttTopicOut);
+     strcat(topic,"/reading");
+     client.publish(topic,"READINGON");
   }
 } // analyzePayload
 
@@ -634,10 +639,6 @@ void manageSensorReading() {
          // Serial.println("Accensione ventole");
          digitalWrite(fanPin, myFanOn);
          // analogWrite(fanPin, fanHighLevel);
-         // avvisa che è partita la sequenza di lettura
-         strcpy(topic, mqttTopicOut);
-         strcat(topic,"/reading");
-         client.publish(topic,"READINGON");
          readingProcActivated=true;
       }
     }
