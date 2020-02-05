@@ -1,4 +1,4 @@
-#define fw_vers "envm00_0.1.0.5a"
+#define fw_vers "envm00_0.1.0.6a"
 // Firmware id  : envm00
 // Firmware vers: 0.1.0.5a a=autoupdate
 
@@ -640,6 +640,10 @@ void manageSensorReading() {
          digitalWrite(fanPin, myFanOn);
          // analogWrite(fanPin, fanHighLevel);
          readingProcActivated=true;
+         // avvisa che è partita la sequenza di lettura
+         strcpy(topic, mqttTopicOut);
+         strcat(topic,"/reading");
+         client.publish(topic,"READINGON");
       }
     }
     else {
