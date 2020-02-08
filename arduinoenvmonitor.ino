@@ -1,4 +1,4 @@
-#define fw_vers "envm00_0.1.0.6a"
+#define fw_vers "envm00_0.1.0.7a"
 // Firmware id  : envm00
 // Firmware vers: 0.1.0.5a a=autoupdate
 
@@ -305,10 +305,13 @@ void analyzePayload(char *payload) {
      // arrivata la richiesta di fare una lettura
      forceReadSensors=true;
      Serial.println("Richiesta di lettura");
-     // avvisa che è partita la sequenza di lettura
-     strcpy(topic, mqttTopicOut);
-     strcat(topic,"/reading");
-     client.publish(topic,"READINGON");
+     if (readingProcActivated) {
+       // avvisa che è partita la sequenza di lettura solo se è già attiva
+       // la sequenza, viceversa ci sarebbe un doppio invio
+       strcpy(topic, mqttTopicOut);
+       strcat(topic,"/reading");
+       client.publish(topic,"READINGON");
+     }
   }
 } // analyzePayload
 
