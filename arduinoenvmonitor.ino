@@ -1,4 +1,4 @@
-#define fw_vers "envm00_0.1.0.7a"
+#define fw_vers "envm00_0.1.0.8a"
 // Firmware id  : envm00
 // Firmware vers: 0.1.0.5a a=autoupdate
 
@@ -78,7 +78,7 @@
 #define leaseDuration 5 // lease del DHCP in hour 
 
 #define readingSensorsInterval 10 // in minuti, ogni quanti minuti legge i sensori
-#define washTime 90               // in sec, tempo di lavaggio dell'aria interna
+#define washTime 70               // in sec, tempo di lavaggio dell'aria interna
 #define washTimePreOff 5          // in sec, tempo di pre-spegnimento delle ventole
 
 #define ledSigPin D7 
