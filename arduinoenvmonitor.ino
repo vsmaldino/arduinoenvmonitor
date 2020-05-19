@@ -1,4 +1,5 @@
 #define fw_vers "envm00_0.1.0.8a"
+// Attenzione alla Board: Wemos D1 R1
 // Firmware id  : envm00
 // Firmware vers: 0.1.0.5a a=autoupdate
 
@@ -106,7 +107,6 @@
    
    To use this driver you will also need to download the Adafruit_Sensor
    library and include it in your libraries folder.
-
    You should also assign a unique ID to this sensor for use with
    the Adafruit Sensor API so that you can identify this particular
    sensor in any data logs, etc.  To assign a unique ID, simply
@@ -265,7 +265,7 @@ void setup() {
    digitalWrite(fanPin, myFanOff);
    // analogWrite(fanPin, 0);
    
-   Serial.begin(19200);
+   Serial.begin(115200);
    
    status=statusErrGen;
    
@@ -532,7 +532,6 @@ void readSensors() {
   strcat(topic,"/tempdallas");
   sprintf(message,"%3.1f",floatDataVal);
   client.publish(topic,message);
-
   Serial.println();
 } // readSensors
 
